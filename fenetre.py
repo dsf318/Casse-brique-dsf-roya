@@ -1,19 +1,19 @@
 
 import tkinter as tk
 import os
+from balle import Balle
 
 POLICE = ("Times New Roman", 16)
-
 
 class FenetreSecondaire:
     def __init__(self, parent, numero):
         self.parent = parent
+        self.after_id = None
         self.fenetre = tk.Toplevel(parent.root)
-        self.fenetre.title(f"Difficultés{numero}")
+        self.fenetre.title(f"Difficultés {numero}")
         self.fenetre.resizable(False, False)
         self.fenetre.geometry(f"{parent.largeur}x{parent.hauteur}")
 
-        # Même fond : on réutilise l'image du parent
         self.canvas = tk.Canvas(self.fenetre, width=parent.largeur,
                                 height=parent.hauteur, highlightthickness=0)
         self.canvas.pack()
@@ -23,19 +23,42 @@ class FenetreSecondaire:
                                 text=f"Difficultés {numero}",
                                 fill="white", font=POLICE)
 
-        # Bouton de retour
-        bouton_retour = tk.Button(self.fenetre, text="Quitter ",
+        bouton_retour = tk.Button(self.fenetre, text="Quitter",
                                   font=POLICE, command=self.retour)
-        self.canvas.create_window(parent.largeur -50, parent.hauteur - 40,
+        self.canvas.create_window(parent.largeur - 50, parent.hauteur - 40,
                                   window=bouton_retour)
 
-        # Si on ferme avec la croix, on revient aussi à la fenêtre d'origine
         self.fenetre.protocol("WM_DELETE_WINDOW", self.retour)
 
-    def retour(self):
-        self.fenetre.destroy()
-        self.parent.root.deiconify()  # réaffiche la fenêtre principale
+        self.creer_jeu()   # 1. on crée la balle
+        self.boucle()      # 2. on la fait bouger
 
+    def creer_jeu(self):
+        self.balle = Balle(self.canvas,
+                           self.parent.largeur // 2,
+                           self.parent.hauteur - 60,
+                           fichier="ball.png", taille=30)
+
+    def boucle(self):
+        if not self.balle.deplacer():
+            self.game_over()
+            return  # on ne relance pas la boucle : la balle s'arrête
+        self.after_id = self.fenetre.after(16, self.boucle)
+
+    def game_over(self):
+        self.after_id = None
+        self.canvas.create_text(self.parent.largeur // 2,
+                                self.parent.hauteur // 2,
+                                text="GAME OVER",
+                                fill="red",
+                                font=("Times New Roman", 48, "bold"))
+
+    def retour(self):
+        # On arrête l'animation avant de détruire la fenêtre
+        if self.after_id is not None:
+            self.fenetre.after_cancel(self.after_id)
+        self.fenetre.destroy()
+        self.parent.root.deiconify()
 
 class interface:
     def __init__(self):
@@ -86,7 +109,7 @@ class interface:
 
     def demarrer(self):
         self.root.mainloop()
-
+    
 
 if __name__ == "__main__":
     fenetre = interface()
