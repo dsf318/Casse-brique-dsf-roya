@@ -3,30 +3,32 @@ import tkinter as tk
 import os
 from balle import Balle
 from Padelorigine import Padel
+from brique import Brique
 
 POLICE = ("Times New Roman", 16)
 
 class FenetreSecondaire:
-    def __init__(self, fenetre, numero):
-        self.fenetre = fenetre
+    def __init__(self, menu, numero):
+        self.menu = menu
         self.after_id = None
-        self.fenetre = tk.Toplevel(fenetre.root)
+        self.fenetre = tk.Toplevel(menu.root)
         self.fenetre.title(f"Difficultés {numero}")
         self.fenetre.resizable(False, False)
-        self.fenetre.geometry(f"{fenetre.largeur}x{fenetre.hauteur}")
+        self.fenetre.geometry(f"{menu.largeur}x{menu.hauteur}")
+        self.numero = numero
 
-        self.canvas = tk.Canvas(self.fenetre, width=fenetre.largeur,
-                                height=fenetre.hauteur, highlightthickness=0)
+        self.canvas = tk.Canvas(self.fenetre, width=menu.largeur,
+                                height=menu.hauteur, highlightthickness=0)
         self.canvas.pack()
-        self.canvas.create_image(0, 0, image=fenetre.photo, anchor="nw")
+        self.canvas.create_image(0, 0, image=menu.photo, anchor="nw")
 
-        self.canvas.create_text(fenetre.largeur // 2, 40,
+        self.canvas.create_text(menu.largeur // 2, 40,
                                 text=f"Difficultés {numero}",
                                 fill="white", font=POLICE)
 
         bouton_retour = tk.Button(self.fenetre, text="Quitter",
                                   font=POLICE, command=self.retour)
-        self.canvas.create_window(fenetre.largeur - 50, fenetre.hauteur - 40,
+        self.canvas.create_window(menu.largeur - 50, menu.hauteur - 40,
                                   window=bouton_retour)
 
         self.fenetre.protocol("WM_DELETE_WINDOW", self.retour)
@@ -34,21 +36,51 @@ class FenetreSecondaire:
         self.creer_jeu()   # 1. on crée la balle
         self.boucle()      # 2. on la fait bouger
 
+
     def creer_jeu(self):
-        self.balle = Balle(self.canvas,
-                           self.fenetre.largeur // 2,
-                           self.fenetre.hauteur - 60,
-                           fichier="ball.png", taille=30)
+        self.score = 0
+        self.texte_score = self.canvas.create_text(
+            10, 10, text="Score : 0", anchor="nw",
+            fill="white", font=POLICE)
+
+        self.creer_briques()
+
         self.padel = Padel(self.canvas,
-                           self.fenetre.largeur // 2,
-                           self.fenetre.hauteur - 70)
+                           self.menu.largeur // 2,
+                           self.menu.hauteur - 70)
         self.padel.activer_clavier(self.fenetre)
 
-        # La balle démarre au-dessus du padel
         self.balle = Balle(self.canvas,
-                           self.fenetre.largeur // 2,
-                           self.fenetre.hauteur - 130,
+                           self.menu.largeur // 2,
+                           self.menu.hauteur - 130,
                            fichier="ball.png", taille=30)
+
+    def creer_briques(self):
+        largeur = self.menu.largeur
+        nb_colonnes = 10
+        nb_lignes = 2 + self.numero     # plus de lignes à chaque niveau
+        marge, espace, hauteur = 20, 5, 20
+        l_brique = (largeur - 2 * marge - (nb_colonnes - 1) * espace) // nb_colonnes
+        couleurs = ["red", "orange", "yellow", "green", "cyan", "violet"]
+
+        self.briques = []
+        for ligne in range(nb_lignes):
+            for col in range(nb_colonnes):
+                x = marge + col * (l_brique + espace)
+                y = 70 + ligne * (hauteur + espace)
+                self.briques.append(
+                    Brique(self.canvas, x, y, l_brique, hauteur,
+                           couleurs[ligne % len(couleurs)]))
+
+    def collision_briques(self):
+        for brique in self.briques:
+            if brique.toucher(self.balle):
+                brique.detruire()
+                self.briques.remove(brique)
+                self.score += 10
+                self.canvas.itemconfig(self.texte_score,
+                                       text=f"Score : {self.score}")
+                break   # une seule brique par image, évite les doubles rebonds
 
     def boucle(self):
         self.padel.deplacer()
@@ -56,12 +88,24 @@ class FenetreSecondaire:
             self.game_over()
             return
         self.padel.rebond(self.balle)
+        self.collision_briques()
+        if not self.briques:
+            self.victoire()
+            return
         self.after_id = self.fenetre.after(16, self.boucle)
+
+    def victoire(self):
+        self.after_id = None
+        self.canvas.create_text(self.menu.largeur // 2,
+                                self.menu.hauteur // 2,
+                                text="VICTOIRE !",
+                                fill="lime",
+                                font=("Times New Roman", 48, "bold"))
 
     def game_over(self):
         self.after_id = None
-        self.canvas.create_text(self.fenetre.largeur // 2,
-                                self.fenetre.hauteur // 2,
+        self.canvas.create_text(self.menu.largeur // 2,
+                                self.menu.hauteur // 2,
                                 text="GAME OVER",
                                 fill="red",
                                 font=("Times New Roman", 48, "bold"))
@@ -71,7 +115,7 @@ class FenetreSecondaire:
         if self.after_id is not None:
             self.fenetre.after_cancel(self.after_id)
         self.fenetre.destroy()
-        self.fenetre.root.deiconify()
+        self.menu.root.deiconify()
 
 class interface:
     def __init__(self):
@@ -127,5 +171,4 @@ class interface:
 if __name__ == "__main__":
     fenetre = interface()
     fenetre.boutons()
-    fenetre.score()
     fenetre.demarrer()

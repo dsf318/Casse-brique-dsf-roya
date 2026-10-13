@@ -14,6 +14,9 @@ class Padel:
             fill=couleur, outline=""
         )
 
+        self.effet = 6      # force de l'effet (0 = miroir pur)
+        self.dx_max = 7     # vitesse horizontale maximale
+
     def activer_clavier(self, fenetre):
         """Relie le clavier à la fenêtre du niveau."""
         fenetre.bind("<KeyPress>", self.appui)
@@ -46,25 +49,22 @@ class Padel:
         self.canvas.move(self.id, dx, 0)
 
     def rebond(self, balle):
-        """Fait rebondir la balle si elle touche le padel."""
         bx1, by1, bx2, by2 = self.canvas.bbox(balle.id)
         px1, py1, px2, py2 = self.canvas.coords(self.id)
 
-        # La balle descend et chevauche le padel
         if (balle.dy > 0 and bx2 >= px1 and bx1 <= px2
                 and by2 >= py1 and by1 <= py2):
-            # On remet la balle juste au-dessus du padel
             self.canvas.move(balle.id, 0, py1 - by2)
+
+            # 1. Effet miroir : dy s'inverse, dx est conservé
             balle.dy = -abs(balle.dy)
 
-            # L'angle dépend de l'endroit touché : bord gauche = part à gauche,
-            # centre = tout droit, bord droit = part à droite
+            # 2. Effet du padel : décalage selon la zone touchée (-1 à +1)
             centre_balle = (bx1 + bx2) / 2
             centre_padel = (px1 + px2) / 2
             ratio = (centre_balle - centre_padel) / (self.largeur / 2)
             ratio = max(-1, min(1, ratio))
-            balle.dx = ratio * 6
+            balle.dx += ratio * self.effet
 
-            # Évite une balle qui monte parfaitement droit
-            if abs(balle.dx) < 1:
-                balle.dx = 1 if balle.dx >= 0 else -1
+            # 3. Limiter dx pour éviter les angles trop plats
+            balle.dx = max(-self.dx_max, min(self.dx_max, balle.dx))
