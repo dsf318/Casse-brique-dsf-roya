@@ -26,10 +26,12 @@ class Balle:
         hauteur = int(self.canvas["height"])
 
         # Rebond sur les murs gauche/droite et le plafond
-        if x1 <= 0 or x2 >= largeur:
-            self.dx = -self.dx
+        if x1 <= 0:
+            self.dx = abs(self.dx)
+        if x2 >= largeur:
+            self.dx = -abs(self.dx)
         if y1 <= 0:
-            self.dy = -self.dy
+            self.dy = abs(self.dy)
 
         # Le bas = game over
         if y2 >= hauteur:
