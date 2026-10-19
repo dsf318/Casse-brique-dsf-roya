@@ -1,39 +1,39 @@
-import os
-import tkinter as tk
-
-
 class Balle:
-    def __init__(self, canvas, x, y, fichier="ball.png", taille=30):
+    def __init__(self, canvas, x, y, taille=20):
         self.canvas = canvas
+        self.rayon = taille / 2
         self.dx = 4
         self.dy = -4
+        self.id = canvas.create_oval(
+            x - self.rayon, y - self.rayon,
+            x + self.rayon, y + self.rayon,
+            fill="white", outline="")
+        self.ancienne_position = self.canvas.coords(self.id)
 
-        dossier = os.path.dirname(os.path.abspath(__file__))
-        self.photo = tk.PhotoImage(file=os.path.join(dossier, fichier))
-
-        # Réduction automatique pour approcher la taille voulue (en pixels)
-        facteur = max(1, round(self.photo.width() / taille))
-        if facteur > 1:
-            self.photo = self.photo.subsample(facteur, facteur)
-
-        self.id = canvas.create_image(x, y, image=self.photo)
+    def replacer(self, x, y):
+        self.canvas.coords(self.id,
+                           x - self.rayon, y - self.rayon,
+                           x + self.rayon, y + self.rayon)
+        self.dx = 4
+        self.dy = -4
+        self.ancienne_position = self.canvas.coords(self.id)
 
     def deplacer(self):
-        """Déplace la balle. Renvoie False si elle touche le bas (perdu)."""
+        """Renvoie False lorsque la balle touche le bas du canevas."""
+        self.ancienne_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, self.dx, self.dy)
-        x1, y1, x2, y2 = self.canvas.bbox(self.id)
+        x1, y1, x2, y2 = self.canvas.coords(self.id)
         largeur = int(self.canvas["width"])
         hauteur = int(self.canvas["height"])
 
-        # Rebond sur les murs gauche/droite et le plafond
         if x1 <= 0:
+            self.canvas.move(self.id, -x1, 0)
             self.dx = abs(self.dx)
-        if x2 >= largeur:
+        elif x2 >= largeur:
+            self.canvas.move(self.id, largeur - x2, 0)
             self.dx = -abs(self.dx)
         if y1 <= 0:
+            self.canvas.move(self.id, 0, -y1)
             self.dy = abs(self.dy)
 
-        # Le bas = game over
-        if y2 >= hauteur:
-            return False
-        return True
+        return y2 < hauteur

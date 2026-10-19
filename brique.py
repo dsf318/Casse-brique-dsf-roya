@@ -6,34 +6,22 @@ class Brique:
 
     def toucher(self, balle):
         """Renvoie True si la balle touche la brique, et la fait rebondir."""
-        bx1, by1, bx2, by2 = self.canvas.bbox(balle.id)
+        bx1, by1, bx2, by2 = self.canvas.coords(balle.id)
         x1, y1, x2, y2 = self.canvas.coords(self.id)
 
         # Pas de contact
         if bx2 < x1 or bx1 > x2 or by2 < y1 or by1 > y2:
             return False
 
-        # Taille du chevauchement sur chaque axe
-        chevauche_x = min(bx2, x2) - max(bx1, x1)
-        chevauche_y = min(by2, y2) - max(by1, y1)
+        ancien_x1, ancien_y1, ancien_x2, ancien_y2 = balle.ancienne_position
 
-        centre_bx = (bx1 + bx2) / 2
-        centre_by = (by1 + by2) / 2
-        centre_x = (x1 + x2) / 2
-        centre_y = (y1 + y2) / 2
-
-        if chevauche_x < chevauche_y:
-            # Touchée sur un côté : on inverse dx, en forçant la bonne direction
-            if centre_bx < centre_x:
-                balle.dx = -abs(balle.dx)
-            else:
-                balle.dx = abs(balle.dx)
+        # On regarde de quel côté venait la balle avant son déplacement.
+        if ancien_y2 <= y1 or ancien_y1 >= y2:
+            balle.dy = -balle.dy
+        elif ancien_x2 <= x1 or ancien_x1 >= x2:
+            balle.dx = -balle.dx
         else:
-            # Touchée dessus ou dessous : on inverse dy
-            if centre_by < centre_y:
-                balle.dy = -abs(balle.dy)
-            else:
-                balle.dy = abs(balle.dy)
+            balle.dy = -balle.dy
         return True
 
     def detruire(self):

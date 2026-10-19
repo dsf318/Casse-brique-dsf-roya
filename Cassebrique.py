@@ -1,8 +1,8 @@
-"""
-Fait par : Da Silva Ferraz Alexis
-Le : 06/10/2026
-Objectif : Casse-brique
-fichier : Cassebrique.py definie les fonctions et les classes du jeu casse-brique
-"""
-from random import *
-from tkinter import *
+"""Casse-brique de Sacha Roya et Alexis Da Silva Ferraz."""
+
+from fenetre import MenuPrincipal
+
+
+if __name__ == "__main__":
+    menu = MenuPrincipal()
+    menu.demarrer()
