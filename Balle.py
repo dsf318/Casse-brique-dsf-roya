@@ -9,7 +9,7 @@ class balle:
         self.dy = -4
 
         dossier = os.path.dirname(os.path.abspath(__file__))
-        self.photo = tk.PhotoImage(file=os.path.join(dossier, fichier))
+        self.photo = tk.PhotoImage(file=os.path.join(dossier, "Images", fichier))
 
         # Réduction automatique pour approcher la taille voulue (en pixels)
         facteur = max(1, round(self.photo.width() / taille))

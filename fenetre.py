@@ -70,7 +70,7 @@ class FenetreSecondaire:
         self.balle = balle(self.canvas,
                            self.menu.largeur // 2,
                            self.menu.hauteur - 130,
-                           fichier="ball.png", taille=30)
+                           taille=30)
 
     def creer_briques(self):
         largeur = self.menu.largeur
@@ -165,7 +165,7 @@ class interface:
         self.root.resizable(False, False)
 
         dossier = os.path.dirname(os.path.abspath(__file__))
-        self.photo = tk.PhotoImage(file=os.path.join(dossier, "fond.png"))
+        self.photo = tk.PhotoImage(file=os.path.join(dossier, "Images", "fond.png"))
 
         # Réduction automatique si l'image dépasse l'écran
         ecran_l = self.root.winfo_screenwidth()
