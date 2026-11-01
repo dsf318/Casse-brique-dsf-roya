@@ -1,5 +1,6 @@
 # Casse-brique-dsf-roy
 Projet de groupe : Sacha Roy et Da Silva Ferraz Alexis
+Le projet à été principalement modifier sur l'ordinateur de Sacha Roy, suite à un problème sur l'ordinateur d'Alexis Da Silva Ferraz. Mais le travail a bien été fait en binôme. 
 
 ## Dépôt Git
 Adresse du dépôt : https://github.com/dsf318/Casse-brique-dsf-roya
