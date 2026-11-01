@@ -1,13 +1,12 @@
 
 class raquette:
     def __init__(self, canvas, x, y, largeur=100, hauteur=15,
-                 vitesse=8, couleur="white"):
+                 vitesse=8, couleur="#A36B34"):
         self.canvas = canvas
         self.largeur = largeur
         self.vitesse = vitesse
-        self.touches = set()  # touches actuellement enfoncées
+        self.touches = []
 
-        # (x, y) = centre du haut du padel
         self.id = canvas.create_rectangle(
             x - largeur // 2, y,
             x + largeur // 2, y + hauteur,
@@ -15,29 +14,34 @@ class raquette:
         )
 
     def activer_clavier(self, fenetre):
-        """Relie le clavier à la fenêtre du niveau."""
         fenetre.bind("<KeyPress>", self.appui)
         fenetre.bind("<KeyRelease>", self.relache)
-        fenetre.focus_force()  # la fenêtre doit avoir le focus pour lire le clavier
+        fenetre.bind("<FocusOut>", self.oublier_touches)
+        fenetre.focus_force()
 
     def appui(self, event):
-        self.touches.add(event.keysym.lower())
+        touche = event.keysym.lower()
+        if touche not in self.touches:
+            self.touches.append(touche)
 
     def relache(self, event):
-        self.touches.discard(event.keysym.lower())
+        touche = event.keysym.lower()
+        if touche in self.touches:
+            self.touches.remove(touche)
+
+    def oublier_touches(self, event):
+        self.touches = []
 
     def deplacer(self):
-        """Déplace le padel selon les touches enfoncées (flèches ou Q / D)."""
         dx = 0
-        if self.touches & {"left", "q"}:
+        if "left" in self.touches or "q" in self.touches:
             dx -= self.vitesse
-        if self.touches & {"right", "d"}:
+        if "right" in self.touches or "d" in self.touches:
             dx += self.vitesse
 
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         largeur_canvas = int(self.canvas["width"])
 
-        # Empêche le padel de sortir de la fenêtre
         if x1 + dx < 0:
             dx = -x1
         if x2 + dx > largeur_canvas:
@@ -53,6 +57,5 @@ class raquette:
                 and by2 >= py1 and by1 <= py2):
             self.canvas.move(balle.id, 0, py1 - by2)
 
-            # Loi de Descartes : l'angle de rebond = l'angle d'arrivée.
-            # Seul dy s'inverse, dx est conservé : la vitesse ne change pas.
+
             balle.dy = -abs(balle.dy)

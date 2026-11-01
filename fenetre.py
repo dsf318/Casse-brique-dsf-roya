@@ -14,7 +14,7 @@ class FenetreSecondaire:
         self.menu = menu
         self.after_id = None
         self.fenetre = tk.Toplevel(menu.root)
-        self.fenetre.title(f"Nivaux {numero}")
+        self.fenetre.title(f"Niveau {numero}")
         self.fenetre.resizable(False, False)
         self.fenetre.geometry(f"{menu.largeur}x{menu.hauteur}")
         self.numero = numero
@@ -35,17 +35,16 @@ class FenetreSecondaire:
 
         self.fenetre.protocol("WM_DELETE_WINDOW", self.retour)
 
-        self.creer_jeu()   # 1. on crée la balle
-        self.boucle()      # 2. on la fait bouger
+        self.creer_jeu()
+        self.boucle()
 
 
     def creer_jeu(self):
         self.score = 0
         self.texte_score = self.canvas.create_text(
             10, 10, text="Score : 0", anchor="nw",
-            fill="blue", font=POLICE)
+            fill="white", font=POLICE)
 
-        # Les vies sont rangées dans une PILE : une vie perdue = un depiler()
         self.vies = Pile()
         for i in range(3):
             self.vies.empiler(i)
@@ -61,11 +60,11 @@ class FenetreSecondaire:
         self.padel.activer_clavier(self.fenetre)
 
         self.en_attente = False
+        self.balle = None
         self.nouvelle_balle()
 
     def nouvelle_balle(self):
-        """Crée une balle au centre (ou la remplace si elle est perdue)."""
-        if hasattr(self, "balle"):
+        if self.balle is not None:
             self.canvas.delete(self.balle.id)
         self.balle = balle(self.canvas,
                            self.menu.largeur // 2,
@@ -75,17 +74,15 @@ class FenetreSecondaire:
     def creer_briques(self):
         largeur = self.menu.largeur
         nb_colonnes = 10
-        nb_lignes = 2 + self.numero     # plus de lignes à chaque niveau
+        nb_lignes = 2 + self.numero
         marge, espace, hauteur = 20, 5, 20
         l_brique = (largeur - 2 * marge - (nb_colonnes - 1) * espace) // nb_colonnes
 
-        # Les couleurs sont dans une FILE : on prend la première (defiler)
-        # puis on la remet à la fin (enfiler) pour recommencer le cycle
+        # Alterne les couleurs des rangées
         couleurs = File()
-        for c in ["red"]:
+        for c in ["red", "orange", "yellow"]:
             couleurs.enfiler(c)
 
-        # Les briques sont dans une LISTE
         self.briques = Liste()
         for ligne in range(nb_lignes):
             couleur = couleurs.defiler()
@@ -97,22 +94,25 @@ class FenetreSecondaire:
                     Brique(self.canvas, x, y, l_brique, hauteur, couleur))
 
     def collision_briques(self):
-        for brique in self.briques:
+        courant = self.briques.debut
+        while courant is not None:
+            brique = courant.valeur
             if brique.toucher(self.balle):
                 brique.detruire()
                 self.briques.supprimer(brique)
                 self.score += 10
                 self.canvas.itemconfig(self.texte_score,
                                        text=f"Score : {self.score}")
-                break   # une seule brique par image, évite les doubles rebonds
+                break
+            courant = courant.suivant
 
     def boucle(self):
         self.padel.deplacer()
 
-        # Balle en attente : elle reste à sa place tant qu'on n'a pas
-        # appuyé sur une touche de déplacement du padel
+        # Attend une touche après une perte
         if self.en_attente:
-            if self.padel.touches & {"left", "q", "right", "d"}:
+            if ("left" in self.padel.touches or "q" in self.padel.touches
+                    or "right" in self.padel.touches or "d" in self.padel.touches):
                 self.en_attente = False
             else:
                 self.after_id = self.fenetre.after(16, self.boucle)
@@ -126,8 +126,10 @@ class FenetreSecondaire:
                 self.game_over()
                 return
             self.nouvelle_balle()
-            self.en_attente = True        # la balle attend une touche
-            self.padel.touches.clear()    # oublie les touches déjà enfoncées
+            self.en_attente = True
+            self.padel.touches = []
+            self.after_id = self.fenetre.after(16, self.boucle)
+            return
         self.padel.rebond(self.balle)
         self.collision_briques()
         if self.briques.est_vide():
@@ -152,7 +154,7 @@ class FenetreSecondaire:
                                 font=("Times New Roman", 48, "bold"))
 
     def retour(self):
-        # On arrête l'animation avant de détruire la fenêtre
+        # Arrête l’animation avant de fermer
         if self.after_id is not None:
             self.fenetre.after_cancel(self.after_id)
         self.fenetre.destroy()
@@ -167,7 +169,6 @@ class interface:
         dossier = os.path.dirname(os.path.abspath(__file__))
         self.photo = tk.PhotoImage(file=os.path.join(dossier, "Images", "fond.png"))
 
-        # Réduction automatique si l'image dépasse l'écran
         ecran_l = self.root.winfo_screenwidth()
         ecran_h = self.root.winfo_screenheight() - 150
         facteur = 1
@@ -187,58 +188,52 @@ class interface:
         self.canvas.create_image(0, 0, image=self.photo, anchor="nw")
 
     def creer_menu(self):
-        """Barre de menu en haut de la fenêtre (consigne : un menu avec options)."""
         barre = tk.Menu(self.root)
 
         menu_jeu = tk.Menu(barre, tearoff=0)
-        for i in range(1, 4):
-            menu_jeu.add_command(label=f"Niveau {i}",
-                                 command=lambda n=i: self.ouvrir(n))
+        menu_jeu.add_command(label="Niveau 1", command=self.niveau_1)
+        menu_jeu.add_command(label="Niveau 2", command=self.niveau_2)
+        menu_jeu.add_command(label="Niveau 3", command=self.niveau_3)
         menu_jeu.add_separator()
         menu_jeu.add_command(label="Quitter", command=self.quitter)
         barre.add_cascade(label="Jeu", menu=menu_jeu)
 
-        menu_aide = tk.Menu(barre, tearoff=0)
-        menu_aide.add_command(label="Règles", command=self.afficher_regles)
-        barre.add_cascade(label="Aide", menu=menu_aide)
 
         self.root.config(menu=barre)
 
-    def afficher_regles(self):
-        messagebox.showinfo("Règles",
-                            "Déplace la raquette avec les flèches (ou Q / D).\n"
-                            "Détruis toutes les briques avec la balle.\n"
-                            "Tu as 3 vies : si la balle tombe, tu en perds une.")
 
     def quitter(self):
         self.root.destroy()
 
     def boutons(self):
         self.creer_menu()
+        commandes = [self.niveau_1, self.niveau_2, self.niveau_3]
         for i in range(1, 4):
             bouton = tk.Button(self.root, text=f"Niveau {i}", font=POLICE,
-                               command=lambda n=i: self.ouvrir(n))
-            # Boutons répartis verticalement au centre
+                               command=commandes[i - 1])
+
             self.canvas.create_window(self.largeur // 2,
                                       self.hauteur * i // 5,
                                       window=bouton)
 
-        # Bouton pour quitter tout le jeu
         bouton_quitter = tk.Button(self.root, text="Quitter le jeu",
                                    font=POLICE, command=self.quitter)
         self.canvas.create_window(self.largeur // 2,
                                   self.hauteur * 4 // 5,
                                   window=bouton_quitter)
 
-    def ouvrir(self, numero):
-        self.root.withdraw()  # cache la fenêtre principale
-        FenetreSecondaire(self, numero)
+    def niveau_1(self):
+        self.ouvrir(1)
 
-    def score(self):
-        self.texte_score = self.canvas.create_text(
-            10, 10, text="Score : 0", anchor="nw",
-            fill="white", font=POLICE
-        )
+    def niveau_2(self):
+        self.ouvrir(2)
+
+    def niveau_3(self):
+        self.ouvrir(3)
+
+    def ouvrir(self, numero):
+        self.root.withdraw()
+        FenetreSecondaire(self, numero)
 
     def demarrer(self):
         self.root.mainloop()

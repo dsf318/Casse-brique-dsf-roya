@@ -1,13 +1,10 @@
 """
 Fait par : Da Silva Ferraz Alexis
-Objectif : les 3 structures de données demandées dans le TP
-           (une liste, une pile et une file), écrites "à la main"
-           avec des maillons (sans utiliser list ni deque).
+Objectif : liste, pile et file chaînées.
 """
 
 
 class Maillon:
-    """Une case de la chaîne : une valeur + un lien vers la case suivante."""
     def __init__(self, valeur):
         self.valeur = valeur
         self.suivant = None
@@ -21,7 +18,6 @@ class Liste:
         return self.debut is None
 
     def ajouter(self, valeur):
-        """Ajoute la valeur à la fin de la liste."""
         nouveau = Maillon(valeur)
         if self.debut is None:
             self.debut = nouveau
@@ -32,7 +28,6 @@ class Liste:
             courant.suivant = nouveau
 
     def supprimer(self, valeur):
-        """Supprime la première case qui contient la valeur."""
         precedent = None
         courant = self.debut
         while courant is not None:
@@ -45,15 +40,6 @@ class Liste:
             precedent = courant
             courant = courant.suivant
         return False
-
-    def __iter__(self):
-        """Permet d'écrire : for x in ma_liste"""
-        courant = self.debut
-        while courant is not None:
-            yield courant.valeur
-            courant = courant.suivant
-
-
 
 class Pile:
     def __init__(self):
@@ -73,7 +59,6 @@ class Pile:
         self.nombre += 1
 
     def depiler(self):
-        """Enlève et renvoie le dernier élément ajouté."""
         if self.sommet is None:
             return None
         valeur = self.sommet.valeur
@@ -82,11 +67,10 @@ class Pile:
         return valeur
 
 
-
 class File:
     def __init__(self):
-        self.tete = None     # le prochain à sortir
-        self.queue = None    # le dernier arrivé
+        self.tete = None
+        self.queue = None
 
     def est_vide(self):
         return self.tete is None
@@ -100,7 +84,6 @@ class File:
         self.queue = nouveau
 
     def defiler(self):
-        """Enlève et renvoie le plus ancien élément."""
         if self.tete is None:
             return None
         valeur = self.tete.valeur
